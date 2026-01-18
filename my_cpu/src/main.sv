@@ -58,14 +58,14 @@ module core (
         );
 */
     //Clock==============
-    logic cpu_clock;
+    logic cpu_ce;
 
-    clock #(
-        .MAX(2000000)
-    ) cpu (
+    clock_enable #(
+        .MAX(200000)
+    ) cpu_clock_enable (
         .clk(clk),
         .reset(reset_n),
-        .clock_div(cpu_clock)
+        .ce(cpu_ce)
     );
 
     //User Stacks==========
@@ -176,74 +176,76 @@ module core (
         
     //Datapath
     always_ff @ (posedge cpu_clock) begin
-        case (state)
-            FETCH : begin
-                led_0 <= ~led_0;
-                mem_addr <= core_program_counter;
-                core_current_instruction <= mem_data_out;
-                state <= DECODE;
-            end
-            DECODE : begin
-                led_1 <= ~led_1;
-                if (dec_mode == 0) begin //REG/ADDR MODE
-                    core_reg_w <= core_registers[dec_reg_w];
-                    core_reg_r <= core_registers[dec_reg_r];
-                    core_jump_addr <= core_registers[dec_reg_w];
-                    stack_in <= core_registers[dec_reg_w];
-                    mem_addr <= core_registers[dec_reg_w];
-                end else if (dec_mode == 1) begin //VALUE MODE
-                    core_jump_addr <= stack_out;
-                    core_reg_w <= stack_out;
-                    stack_in[11:6] <= dec_reg_w;
-                    stack_in[5:0] <= dec_reg_r;
+        if (cpu_ce) begin
+            case (state)
+                FETCH : begin
+                    led_0 <= ~led_0;
+                    mem_addr <= core_program_counter;
+                    core_current_instruction <= mem_data_out;
+                    state <= DECODE;
                 end
-                state <= EXEC;
-            end
-            EXEC : begin
-                led_2 <= ~led_2;
-                core_program_counter <= core_program_counter + 1;
-                case (dec_instruction_type) 
-                    `ALU_INSTRUCTION : begin
-                        core_registers[dec_reg_w] <= alu_output;
-                        core_equ_flag <= alu_equ_out;
-                        core_sign_flag <= alu_sign_out;
+                DECODE : begin
+                    led_1 <= ~led_1;
+                    if (dec_mode == 0) begin //REG/ADDR MODE
+                        core_reg_w <= core_registers[dec_reg_w];
+                        core_reg_r <= core_registers[dec_reg_r];
+                        core_jump_addr <= core_registers[dec_reg_w];
+                        stack_in <= core_registers[dec_reg_w];
+                        mem_addr <= core_registers[dec_reg_w];
+                    end else if (dec_mode == 1) begin //VALUE MODE
+                        core_jump_addr <= stack_out;
+                        core_reg_w <= stack_out;
+                        stack_in[11:6] <= dec_reg_w;
+                        stack_in[5:0] <= dec_reg_r;
                     end
-                    `JUMP_INSTRUCTION : begin
-                        if (dec_opcode == `JUMP_IF_E && core_equ_flag == 1) begin
-                            core_program_counter <= core_jump_addr;
-                        end else if (dec_opcode == `JUMP_IF_NE && core_equ_flag == 0) begin
-                            core_program_counter <= core_jump_addr;
-                        end else if (dec_opcode == `JUMP_IF_POS && core_sign_flag == 1) begin
-                            core_program_counter <= core_jump_addr;
-                        end else if (dec_opcode == `JUMP_IF_NEG && core_sign_flag == 0) begin
-                            core_program_counter <= core_jump_addr;
+                    state <= EXEC;
+                end
+                EXEC : begin
+                    led_2 <= ~led_2;
+                    core_program_counter <= core_program_counter + 1;
+                    case (dec_instruction_type) 
+                        `ALU_INSTRUCTION : begin
+                            core_registers[dec_reg_w] <= alu_output;
+                            core_equ_flag <= alu_equ_out;
+                            core_sign_flag <= alu_sign_out;
                         end
-                    end
-                    `MEM_MAN_INSTRUCTION : begin
-                        if (dec_opcode == `MOV_R_R) begin
-                            core_reg_w <= core_reg_r;
-                        end else if (dec_opcode == `MOV_A_R) begin
-                            mem_write_enable <= 1;            
-                        end else if (dec_opcode == `MOV_R_A) begin
-                            core_reg_w <= mem_data_out;
-                        end else if (dec_opcode == `PUSH_LOW) begin
-                            stack_we <= 1;
-                        end else if (dec_opcode == `PUSH_HIGH) begin
-                            stack_we <= 1;
-                            stack_pointer <= stack_pointer + 1;
-                        end else if (dec_opcode == `PUSH_LOW) begin
-                            stack_we <= 1;
-                        end else if (dec_opcode == `POP) begin
-                            core_reg_w <= stack_out;
+                        `JUMP_INSTRUCTION : begin
+                            if (dec_opcode == `JUMP_IF_E && core_equ_flag == 1) begin
+                                core_program_counter <= core_jump_addr;
+                            end else if (dec_opcode == `JUMP_IF_NE && core_equ_flag == 0) begin
+                                core_program_counter <= core_jump_addr;
+                            end else if (dec_opcode == `JUMP_IF_POS && core_sign_flag == 1) begin
+                                core_program_counter <= core_jump_addr;
+                            end else if (dec_opcode == `JUMP_IF_NEG && core_sign_flag == 0) begin
+                                core_program_counter <= core_jump_addr;
+                            end
                         end
-                    end
-                endcase
-                state <= FETCH;
-            end
-            default : begin
-                state <= FETCH;
-            end
-        endcase
+                        `MEM_MAN_INSTRUCTION : begin
+                            if (dec_opcode == `MOV_R_R) begin
+                                core_reg_w <= core_reg_r;
+                            end else if (dec_opcode == `MOV_A_R) begin
+                                mem_write_enable <= 1;            
+                            end else if (dec_opcode == `MOV_R_A) begin
+                                core_reg_w <= mem_data_out;
+                            end else if (dec_opcode == `PUSH_LOW) begin
+                                stack_we <= 1;
+                            end else if (dec_opcode == `PUSH_HIGH) begin
+                                stack_we <= 1;
+                                stack_pointer <= stack_pointer + 1;
+                            end else if (dec_opcode == `PUSH_LOW) begin
+                                stack_we <= 1;
+                            end else if (dec_opcode == `POP) begin
+                                core_reg_w <= stack_out;
+                            end
+                        end
+                    endcase
+                    state <= FETCH;
+                end
+                default : begin
+                    state <= FETCH;
+                end
+            endcase
+        end
     end
 endmodule
 

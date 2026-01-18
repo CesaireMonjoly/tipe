@@ -1,26 +1,26 @@
 `ifndef CLOCK
 `define CLOCK
 
-module clock #(parameter [64:0] MAX) (
+module clock_enable #(parameter [32:0] MAX) (
         input clk,
         input reset,
-        output reg clock_div
+        output logic ce
     );
         
-    logic [64:0] counter = 0;
+    logic [32:0] counter = 0;
     always_ff @ (posedge clk) begin
         if (reset) begin
             counter <= 0;
+            ce <= 0;
+        end else begin
+            if (counter >= MAX - 1) begin
+                counter <= 0;
+                ce <= 1; 
+            end else begin
+                counter <= counter + 1;
+                ce <= 0; 
+            end
         end
-        if (counter < MAX/2) 
-            clock_div <= 1;
-        else 
-            clock_div <= 0;
-        
-        if (counter >= MAX) 
-            counter <= 0;
-        else 
-            counter <= counter + 1;
     end
 endmodule
 
