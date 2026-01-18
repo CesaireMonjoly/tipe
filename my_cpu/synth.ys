@@ -1,0 +1,3 @@
+read_verilog -sv src/*.sv
+synth_ice40 -top core -json build/top_level_design.json 
+

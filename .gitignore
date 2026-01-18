@@ -1,0 +1,5 @@
+#Yosys, nextpnr, and icepack files 
+*.asc
+*.bin
+*.vcd
+
