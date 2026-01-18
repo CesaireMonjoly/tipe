@@ -20,7 +20,7 @@ module alu (
     wire [11:0] rot_l, rot_r;
 
     assign equ_out = (a_in == b_in);
-    assign sign_out = a_out < 0; //0 = pos and 1 = neg
+    assign sign_out = a_out[11]; //0 = pos and 1 = neg
 
 
     assign add_res = {1'b0, a_in} + {1'b0, b_in} + carry_in;
