@@ -1,7 +1,7 @@
 `ifndef MEMORY_SV
 `define MEMORY_SV
 
-module memory #(parameter COUNT = 64, parameter DATA_WIDTH = 12, parameter WRITE_PRG = 0) (
+module memory #(parameter COUNT = 4096, parameter DATA_WIDTH = 12, parameter WRITE_PRG = 0) (
         input clk,
         input logic [DATA_WIDTH-1:0] addr,
         input logic write_enable,
@@ -10,7 +10,6 @@ module memory #(parameter COUNT = 64, parameter DATA_WIDTH = 12, parameter WRITE
     );
 
     logic [DATA_WIDTH-1:0] ram [0:COUNT-1];
-    logic [DATA_WIDTH-1:0] addr_reg;
 
     initial begin 
         if (WRITE_PRG) begin 
@@ -23,7 +22,7 @@ module memory #(parameter COUNT = 64, parameter DATA_WIDTH = 12, parameter WRITE
             ram[addr] <= data_in;
         end
         else begin
-            data_out <= ram[addr_reg];
+            data_out <= ram[addr];
             addr_reg <= addr;
         end
     end
