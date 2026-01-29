@@ -205,10 +205,10 @@ module core (
                 FETCH : begin
                     led_0 <= ~led_0;
                     mem_addr <= core_program_counter;
-                    core_current_instruction <= mem_data_out;
                     state <= DECODE;
                 end
                 DECODE : begin
+                    core_current_instruction <= mem_data_out;
                     led_1 <= ~led_1;
                     if (dec_mode == 0) begin //REG/ADDR MODE
                         core_reg_w <= core_registers[dec_reg_w];
