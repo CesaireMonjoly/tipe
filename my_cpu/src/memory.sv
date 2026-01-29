@@ -23,7 +23,6 @@ module memory #(parameter COUNT = 4096, parameter DATA_WIDTH = 12, parameter WRI
         end
         else begin
             data_out <= ram[addr];
-            addr_reg <= addr;
         end
     end
 endmodule
