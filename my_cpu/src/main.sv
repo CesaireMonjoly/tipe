@@ -52,9 +52,6 @@ module core (
 
     logic uart_tx_active;
     logic uart_tx_done;
-
-    logic uart_tx_active;
-    logic uart_tx_done;
     logic uart_tx_output;
 
 
