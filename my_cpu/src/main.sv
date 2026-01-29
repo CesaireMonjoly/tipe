@@ -103,7 +103,7 @@ module core (
         .DATA_WIDTH(12),
         .WRITE_PRG(0)
     ) stack ( //Bits de poids faibles
-        .clk(cpu_clock),
+        .clk(clk),
         .addr(stack_pointer),
         .write_enable(stack_we),
         .data_in(stack_in),
@@ -152,7 +152,7 @@ module core (
     assign dec_opcode = core_current_instruction;
 
     decoder core_decoder (
-        .clk(cpu_clock),
+        .clk(clk),
         .opcode(dec_opcode),
         .mode(dec_mode),
         .offset(dec_offset),
@@ -175,7 +175,7 @@ module core (
         .DATA_WIDTH(12),
         .WRITE_PRG(1)
     ) main_memory (
-        .clk(cpu_clock),
+        .clk(clk),
         .addr(mem_addr),
         .write_enable(mem_write_enable),
         .data_in(mem_data_in),
@@ -184,7 +184,7 @@ module core (
     //====================
     
     //Reset
-    always_ff @ (posedge cpu_clock) begin
+    always_ff @ (posedge clk) begin
         if (reset_n) begin
             //state <= FETCH;
             core_program_counter <= 0;
@@ -202,7 +202,7 @@ module core (
     end
         
     //Datapath
-    always_ff @ (posedge cpu_clock) begin
+    always_ff @ (posedge clk) begin
         if (cpu_ce) begin
             case (state)
                 FETCH : begin
