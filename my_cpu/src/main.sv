@@ -3,7 +3,7 @@
 `include "src/alu.sv"
 `include "src/memory.sv"
 `include "src/clock.sv"
-//`include "src/uart.sv"
+`include "src/uart.sv"
 
 module core (
         input clk,
@@ -31,32 +31,55 @@ module core (
     //assign led_1 = state[1];
     //assign led_2 = state[2];
 
-    reg [11:0] core_program_counter;
+    logic [11:0] core_program_counter;
     logic [11:0] core_current_instruction;
 
     logic [11:0] core_reg_w;
     logic [11:0] core_reg_r;
 
-    reg [11:0] core_jump_addr;
+    logic [11:0] core_jump_addr;
     
-    reg [11:0] core_registers [0:3]; //A B C D E F G H
+    logic [11:0] core_registers [0:3]; //A B C D E F G H
 
-    reg core_equ_flag;
-    reg core_sign_flag;
+    logic core_equ_flag;
+    logic core_sign_flag;
 
     //Uart transmiter====
-/*
-    uart_tx 
-        #(CLKS_PER_BIT, SIZE = 7)
-        (
-            .clk(clk_9600),
-            .i_data_available(,
-            .i_data_byte,
-            .o_active,
-            .o_done,
-            .o_tx
-        );
-*/
+
+    logic uart_tx_ce;
+    logic uart_tx_data_available;
+    logic [7:0] uart_tx_data_byte;
+
+    logic uart_tx_active;
+    logic uart_tx_done;
+
+    logic uart_tx_active;
+    logic uart_tx_done;
+    logic uart_tx_output;
+
+
+    clock_enable #(
+        .MAX(200000)
+    ) uart_clock_enable (
+        .clk(clk),
+        .reset(reset_n),
+        .ce(uart_ce)
+    );
+
+
+    uart_tx #(
+        .CLKS_PER_BIT(8), .SIZE(7)
+    ) send (
+            .clk(clk),
+            .ce(uart_ce),
+            .i_data_available(uart_tx_data_available),
+            .i_data_byte(uart_tx_data_byte),
+            .o_active(uart_tx_active),
+            .o_done(uart_tx_done),
+            .o_tx(uart_tx_output)
+    );
+
+
     //Clock==============
     logic cpu_ce;
 
@@ -69,11 +92,11 @@ module core (
     );
 
     //User Stacks==========
-    reg [11:0] stack_pointer;
+    logic [11:0] stack_pointer;
 
-    reg stack_we;
-    reg [11:0] stack_in;
-    reg [11:0] stack_out;
+    logic stack_we;
+    logic [11:0] stack_in;
+    logic [11:0] stack_out;
 
     memory #(
         .COUNT(64),
@@ -93,11 +116,13 @@ module core (
     //ALU=================
     logic [11:0] alu_output;
     logic [2:0] alu_func_code;
-    reg alu_carry_in;
+    logic alu_carry_in;
     wire alu_carry_out;
     wire alu_equ_out;
     wire alu_sign_out;
     wire alu_overflow;
+
+    assign alu_func_code = dec_sub_instruction;
  
     alu core_alu (
         .a_in(core_reg_w),
@@ -123,6 +148,8 @@ module core (
     wire [2:0] dec_sub_instruction;
     wire dec_mode;
     wire dec_offset;
+
+    assign dec_opcode = core_current_instruction;
 
     decoder core_decoder (
         .clk(cpu_clock),
