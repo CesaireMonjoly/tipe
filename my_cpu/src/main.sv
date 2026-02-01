@@ -7,16 +7,16 @@
 
 module core (
         input clk,
-        input reset_n,
+        input reset,
 
         input rxd,
         output txd,
 
-        output led_0,
-        output led_1,
-        output led_2,
-        output led_3,
-        output led_4
+        output logic led_0,
+        output logic led_1,
+        output logic led_2,
+        output logic led_3,
+        output logic led_4
     );
 
     //State
@@ -59,8 +59,8 @@ module core (
         .MAX(200000)
     ) uart_clock_enable (
         .clk(clk),
-        .reset(reset_n),
-        .ce(uart_ce)
+        .reset(reset),
+        .ce(uart_tx_ce)
     );
 
 
@@ -68,7 +68,7 @@ module core (
         .CLKS_PER_BIT(8), .SIZE(7)
     ) send (
             .clk(clk),
-            .ce(uart_ce),
+            .ce(uart_tx_ce),
             .i_data_available(uart_tx_data_available),
             .i_data_byte(uart_tx_data_byte),
             .o_active(uart_tx_active),
@@ -84,7 +84,7 @@ module core (
         .MAX(200000)
     ) cpu_clock_enable (
         .clk(clk),
-        .reset(reset_n),
+        .reset(reset),
         .ce(cpu_ce)
     );
 
@@ -182,7 +182,7 @@ module core (
     
     //Reset
     always_ff @ (posedge clk) begin
-        if (reset_n) begin
+        if (reset) begin
             //state <= FETCH;
             core_program_counter <= 0;
             core_current_instruction <= 0;
