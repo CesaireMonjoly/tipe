@@ -26,7 +26,7 @@ module core_tb;
     end
 
 
-    core core_dut (
+    core #(.CPU_CE(1), .UART_CE(1)) core_dut (
         .clk(clk),
         .reset(reset),
         .rxd(rxd),
@@ -50,7 +50,7 @@ module core_tb;
         begin
             $display("--- Reset du CPU ---");
             reset = 1; 
-            #(CLK_PERIOD * 5);
+            #(CLK_PERIOD * 2);
             reset = 0;
             @(posedge clk);
         end

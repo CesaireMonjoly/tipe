@@ -5,7 +5,7 @@
 `include "src/clock.sv"
 `include "src/uart.sv"
 
-module core (
+module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
         input clk,
         input reset,
 
@@ -56,7 +56,7 @@ module core (
 
 
     clock_enable #(
-        .MAX(200000)
+        .MAX(UART_CE)
     ) uart_clock_enable (
         .clk(clk),
         .reset(reset),
@@ -81,7 +81,7 @@ module core (
     logic cpu_ce;
 
     clock_enable #(
-        .MAX(200000)
+        .MAX(CPU_CE)
     ) cpu_clock_enable (
         .clk(clk),
         .reset(reset),
@@ -183,7 +183,16 @@ module core (
     //Reset
     always_ff @ (posedge clk) begin
         if (reset) begin
-            //state <= FETCH;
+            state <= FETCH;
+        
+            //LEDS
+            led_0 <= 0;
+            led_1 <= 0;
+            led_2 <= 0;
+            led_3 <= 0;
+            led_4 <= 0;
+
+            //CORE
             core_program_counter <= 0;
             core_current_instruction <= 0;
             core_reg_r <= 0;

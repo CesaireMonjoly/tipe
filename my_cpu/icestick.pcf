@@ -9,4 +9,4 @@ set_io led_4 95
 set_io rxd  9
 set_io txd  8
 
-set_io reset_n 47
+set_io reset 47
