@@ -180,11 +180,24 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
     );
     //====================
     
-    //Reset
+    //RESET
     always_ff @ (posedge clk) begin
         if (reset) begin
             state <= FETCH;
-        
+
+            //MEMORY
+            mem_data_in <= 0;
+            mem_addr <= 0;
+            mem_write_enable <= 0;
+
+            //STACK
+            stack_we <= 0;
+            stack_in <= 0;
+            stack_pointer <= 0;
+
+            //ALU
+            alu_carry_in <= 0;
+
             //LEDS
             led_0 <= 0;
             led_1 <= 0;
