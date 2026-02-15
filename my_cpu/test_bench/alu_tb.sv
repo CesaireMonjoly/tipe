@@ -167,9 +167,6 @@ module alu_tb;
     
     // Programme de test principal
     initial begin
-        $dumpfile("alu_wave.vcd");
-        $dumpvars(0, alu_tb);
-        
         // Tests d'addition/soustraction
         test_add_sub(12'h000, 12'h000, 0);  // 0+0
         test_add_sub(12'h7FF, 12'h001, 0);  // Max positif +1
