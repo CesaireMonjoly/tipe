@@ -4,6 +4,7 @@
 SRC=src/*.sv
 TESTBENCH=test_bench/*.sv
 
+
 #Build
 BUILD_DIR=build
 
@@ -16,6 +17,8 @@ BUILD_PCF=icestick.pcf
 
 #Simulation
 SIM_OUT=sim
+TB_DIR=test_bench
+SIM_TARGETS=decoder alu core
 
 
 build : 
@@ -28,10 +31,29 @@ build :
 burn :
 		sudo	openFPGALoader --board ice40_generic $(BUILD_PRG)
 
-sim : 
-		@iverilog -Wall -g2012 $(SRC) $(TESTBENCH) -o $(SIM_OUT)
-		@echo ""
-		@vvp $(SIM_OUT)
+.PHONY: sim sim-% $(SIM_TARGETS)
+
+sim :
+		@target="$(filter-out $@,$(MAKECMDGOALS))"; \
+		if [ -z "$$target" ]; then \
+			iverilog -Wall -g2012 $(SRC) $(TESTBENCH) -o $(SIM_OUT); \
+			echo ""; \
+			vvp $(SIM_OUT); \
+		else \
+			$(MAKE) sim-$$target; \
+		fi
+
+sim-% :
+		@tb="$(TB_DIR)/$*_tb.sv"; \
+		if [ ! -f "$$tb" ]; then \
+			echo "Unknown sim target '$*' (expected $$tb)."; \
+			exit 1; \
+		fi; \
+		iverilog -Wall -g2012 $(SRC) $$tb -o $(SIM_OUT); \
+		echo ""; \
+		vvp $(SIM_OUT)
+
+$(SIM_TARGETS): ;
 
 
 clean :
@@ -40,4 +62,3 @@ clean :
 		@rm -rf *.vcd
 		@rm -rf *.bin
 		@echo "Done."
-
