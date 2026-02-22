@@ -28,6 +28,7 @@ class Assembler:
 
         self.labels = {}
         self.binary_output = []
+        self.str_output = ""
 
     def is_register(self, arg):
         return arg in self.registers
@@ -84,6 +85,7 @@ class Assembler:
     def second_pass(self, lines):
         """Génération des instructions 12 bits"""
         for line in lines:
+            mode = 0
             parts = line.replace(',', ' ').split()
             mnemo = parts[0].replace(';', '')
             args = [a.replace(';', '') for a in parts[1:]]
@@ -99,13 +101,20 @@ class Assembler:
             if len(args) == 2: # add A B
                 operand = (self.registers[args[0]] << 3) | self.registers[args[1]]
             elif mnemo in ['push_l', 'push_h']: # push_l $10
+                mode = 1
                 if self.is_immediate(args[0]): operand = self.parse_immediate(args[0])
                 elif self.is_label_ref(args[0]): operand = self.resolve_label_part(args[0])
             elif len(args) == 1: # push A
                 operand = (self.registers[args[0]] << 3)
             
             # Instruction finale (12 bits)
-            self.binary_output.append((opcode << 6) | (operand & 0x3F))
+            current_opcode = (opcode << 6) | (operand & 0x3F) | (mode << 11)
+            self.binary_output.append(current_opcode)
+            self.str_output += f"{current_opcode:0{12}b}\n"
+
+    def save_str(self, filename="out.txt"):
+        with open(filename, "w") as f:
+            f.write(self.str_output)
 
     def save_packed_binary(self, filename="out.bin"):
         """
@@ -165,6 +174,7 @@ def format_bin_to_text(opcode): #visual purpose only
 if __name__ == "__main__":
     code = """
     // Initialisation
+    xor A A;
     push_l $10;
     push_h $0;
     pop A;
@@ -190,13 +200,13 @@ if __name__ == "__main__":
     """
 
     simple_code = """
-        push_l $10;
-        push_h $0;
-        pop A;
+        mov_r_r A A;
+        mov_a_r A A;
     """
     
     asm = Assembler()
-    asm.assemble(code, "prog.bin")
+    asm.assemble(code, "prog")
+    asm.save_str("prog.txt")
     
     print("\nDisplay bin result :")
     for i in asm.binary_output:

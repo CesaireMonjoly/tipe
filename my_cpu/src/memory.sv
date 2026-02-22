@@ -13,7 +13,7 @@ module memory #(parameter COUNT = 4096, parameter DATA_WIDTH = 12, parameter WRI
 
     initial begin 
         if (WRITE_PRG) begin 
-            $readmemh("program", ram);
+            $readmemb("prog.txt", ram);
         end
     end
 
