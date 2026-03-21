@@ -27,10 +27,6 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
     } state_t;
     state_t state;
 
-    //assign led_0 = state[0];
-    //assign led_1 = state[1];
-    //assign led_2 = state[2];
-
     logic [11:0] core_program_counter;
     logic [11:0] core_current_instruction;
 
@@ -43,6 +39,8 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
 
     logic core_equ_flag;
     logic core_sign_flag;
+
+    logic [11:0] core_instruction_counter; //Count how many instructions that have been executed (for debug purpose)
 
     //Uart transmiter====
 
@@ -96,7 +94,7 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
     logic [11:0] stack_out;
 
     memory #(
-        .COUNT(64),
+        .COUNT(10),
         .DATA_WIDTH(12),
         .WRITE_PRG(0)
     ) stack ( //Bits de poids faibles
@@ -136,15 +134,15 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
 
     //Decoder==============
     logic [11:0] dec_opcode;
-    wire [3:0] dec_operation_type;
-    wire [5:0] dec_value;
-    wire [2:0] dec_reg_r;
-    wire [2:0] dec_reg_w;
-    wire [11:0] dec_addr;
-    wire [2:0] dec_instruction_type;
-    wire [2:0] dec_sub_instruction;
-    wire dec_mode;
-    wire dec_offset;
+    logic [3:0] dec_operation_type;
+    logic [5:0] dec_value;
+    logic [2:0] dec_reg_r;
+    logic [2:0] dec_reg_w;
+    logic [11:0] dec_addr;
+    logic [2:0] dec_instruction_type;
+    logic [2:0] dec_sub_instruction;
+    logic dec_mode;
+    logic dec_offset;
 
     assign dec_opcode = core_current_instruction;
 
@@ -216,7 +214,7 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
             end
             core_equ_flag <= 0;
             core_sign_flag <= 0;
-            stack_pointer <= 0;
+            core_instruction_counter <= 0;
         end
     end
         
@@ -225,6 +223,7 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
         if (cpu_ce) begin
             case (state)
                 FETCH : begin
+                    core_instruction_counter <= core_instruction_counter + 1;
                     led_0 <= ~led_0;
                     mem_addr <= core_program_counter;
                     state <= DECODE;
@@ -237,7 +236,7 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
                         core_reg_r <= core_registers[dec_reg_r];
                         core_jump_addr <= core_registers[dec_reg_w];
                         stack_in <= core_registers[dec_reg_w];
-                        mem_addr <= core_registers[dec_reg_w];
+                        //mem_addr <= core_registers[dec_reg_w];
                     end else if (dec_mode == 1) begin //VALUE MODE
                         core_jump_addr <= stack_out;
                         core_reg_w <= stack_out;

@@ -51,9 +51,10 @@ sim-% :
 		fi; \
 		iverilog -Wall -g2012 $(SRC) $$tb -o $(SIM_OUT); \
 		echo ""; \
-		vvp $(SIM_OUT)
+		vvp $(SIM_OUT); 
 
-$(SIM_TARGETS): ;
+$(SIM_TARGETS): 
+	@echo "done";
 
 
 clean :

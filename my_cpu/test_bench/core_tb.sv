@@ -1,6 +1,5 @@
 `timescale 1ns/1ps
 
-
 module core_tb;
     // Parametres
     localparam CLK_PERIOD = 10;
@@ -23,6 +22,11 @@ module core_tb;
     initial begin
         clk = 0;
         forever #(CLK_PERIOD/2) clk = ~clk;
+    end
+
+    initial begin 
+        #10000;
+        $finish;
     end
 
 
@@ -71,12 +75,8 @@ module core_tb;
 
         // Sequence de test
         reset_cpu();
-
+/*
         $display("--- Debut de l'execution ---");
-        
-        // On laisse le processeur executer les instructions chargees
-        // dans le fichier "program" via la memoire 
-        
         // Chaque instruction prend 3 cycles de cpu_ce (FETCH, DECODE, EXEC) 
         // Avec MAX=2, cpu_ce arrive tous les 2 cycles de clk 
         for (int i = 0; i < 20; i++) begin
@@ -88,6 +88,7 @@ module core_tb;
 
         $display("--- Simulation terminee ---");
         $finish;
+*/
     end
 
 endmodule
