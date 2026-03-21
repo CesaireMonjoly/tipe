@@ -1,3 +1,4 @@
+#!/bin/python
 import sys
 import struct
 
@@ -72,13 +73,15 @@ class Assembler:
         """Repérage des labels"""
         pc = 0
         clean_lines = []
+        line_number = -1
         for line in lines:
+            line_number += 1
             line = line.split('//')[0].strip()
             if not line: continue
             if line.endswith(':'):
                 self.labels[line[:-1]] = pc
                 continue 
-            clean_lines.append(line)
+            clean_lines.append((line, line_number))
             pc += 1 
         return clean_lines
 
@@ -86,12 +89,12 @@ class Assembler:
         """Génération des instructions 12 bits"""
         for line in lines:
             mode = 0
-            parts = line.replace(',', ' ').split()
+            parts = line[0].replace(',', ' ').split()
             mnemo = parts[0].replace(';', '')
             args = [a.replace(';', '') for a in parts[1:]]
 
             if mnemo not in self.opcodes:
-                print(f"Error: Unknown instruction '{mnemo}'")
+                print(f"Error: Unknown instruction '{mnemo}', at line {line[1]} : {line[0]}.") 
                 sys.exit(1)
 
             opcode = self.opcodes[mnemo]
@@ -155,7 +158,6 @@ class Assembler:
                 b2 = (inst1 & 0x0F) << 4
                 packed_bytes.append(b1)
                 packed_bytes.append(b2)
-
         with open(filename, 'wb') as f:
             f.write(packed_bytes)
         print(f"\n[+] Packed Binary saved to {filename}")
@@ -165,11 +167,11 @@ class Assembler:
     def assemble(self, source_code, filename="out.bin"):
         lines = self.first_pass(source_code.splitlines())
         self.second_pass(lines)
-        self.save_packed_binary(filename)
+        #self.save_packed_binary(filename)
 
 def format_bin_to_text(opcode): #visual purpose only
     s = f"{opcode:0{12}b}"
-    return " ".join(s[i:i+3] for i in range(0, len(s), 3))
+    return (" ".join(s[i:i+3] for i in range(0, len(s), 3)), hex(opcode))
 
 if __name__ == "__main__":
     code = """
@@ -178,6 +180,9 @@ if __name__ == "__main__":
     push_l $10;
     push_h $0;
     pop A;
+    push_l $1;
+    push_h $0;
+    pop B;
     
     _loop:
         // Corps de la boucle
@@ -203,10 +208,66 @@ if __name__ == "__main__":
         mov_r_r A A;
         mov_a_r A A;
     """
+
+    fibo = """
+    xor H H;
+    push_l _l_entry;
+    push_h _h_entry;
+    pop H;
+    jump H;
+    //Jump to entry
+
+    _entry:
+        //Working registers
+        xor A A;
+        xor B B;
+        xor D D;
+        xor F F;
+        push_l $1;
+        push_h $0;
+        pop B;
+        mov_r_r F B; 
+
+        //Amount of iteration (10)
+        xor E E;
+        push_l $10;
+        push_h $0;
+        pop E;
+
+        //Counter
+        xor C C; 
+
+        // End jump
+        push_l _l_end;
+        push_h _h_end;
+        pop H;
+
+        // Loop jump
+        push_l _l_incr;
+        push_h _h_incr;
+        pop G;
+
+    _incr:
+        sub E C; 
+        jump_if_e H  
+        
+        // fibo stuff
+        mov_r_r D B;
+        add B A;
+        mov_r_r A D;
+
+        //incr counter
+        add C F;
+
+        jump G;
+
+    _end:
+        mov_r_r A D;
+    """
     
     asm = Assembler()
-    asm.assemble(code, "prog")
-    asm.save_str("prog.txt")
+    asm.assemble(fibo, "prog")
+    asm.save_str("my_cpu/prog.txt")
     
     print("\nDisplay bin result :")
     for i in asm.binary_output:
