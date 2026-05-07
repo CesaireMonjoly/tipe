@@ -73,7 +73,7 @@ class Assembler:
         """Repérage des labels"""
         pc = 0
         clean_lines = []
-        line_number = -1
+        line_number = 0
         for line in lines:
             line_number += 1
             line = line.split('//')[0].strip()
@@ -174,99 +174,15 @@ def format_bin_to_text(opcode): #visual purpose only
     return (" ".join(s[i:i+3] for i in range(0, len(s), 3)), hex(opcode))
 
 if __name__ == "__main__":
-    code = """
-    // Initialisation
-    xor A A;
-    push_l $10;
-    push_h $0;
-    pop A;
-    push_l $1;
-    push_h $0;
-    pop B;
-    
-    _loop:
-        // Corps de la boucle
-        sub A B;
-        
-        // Saut conditionnel vers _end
-        push_l _l_end;
-        push_h _h_end;
-        pop H;
-        jump_if_neg H;
-        
-        // Saut inconditionnel vers _loop
-        push_l _l_loop;
-        push_h _h_loop;
-        pop H;
-        jump H;
+    code_path = "code.s"
+    if len(sys.argv) > 1 : 
+        code_path = sys.argv[1]
 
-    _end:
-        nop;
-    """
+    with open(code_path, 'r') as file :
+        code = file.read()
 
-    simple_code = """
-        mov_r_r A A;
-        mov_a_r A A;
-    """
-
-    fibo = """
-    xor H H;
-    push_l _l_entry;
-    push_h _h_entry;
-    pop H;
-    jump H;
-    //Jump to entry
-
-    _entry:
-        //Working registers
-        xor A A;
-        xor B B;
-        xor D D;
-        xor F F;
-        push_l $1;
-        push_h $0;
-        pop B;
-        mov_r_r F B; 
-
-        //Amount of iteration (10)
-        xor E E;
-        push_l $10;
-        push_h $0;
-        pop E;
-
-        //Counter
-        xor C C; 
-
-        // End jump
-        push_l _l_end;
-        push_h _h_end;
-        pop H;
-
-        // Loop jump
-        push_l _l_incr;
-        push_h _h_incr;
-        pop G;
-
-    _incr:
-        sub E C; 
-        jump_if_e H  
-        
-        // fibo stuff
-        mov_r_r D B;
-        add B A;
-        mov_r_r A D;
-
-        //incr counter
-        add C F;
-
-        jump G;
-
-    _end:
-        mov_r_r A D;
-    """
-    
     asm = Assembler()
-    asm.assemble(fibo, "prog")
+    asm.assemble(code, "prog")
     asm.save_str("my_cpu/prog.txt")
     
     print("\nDisplay bin result :")
