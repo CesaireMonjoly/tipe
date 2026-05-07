@@ -6,6 +6,7 @@
 module decoder (
         input clk,
         input logic [11:0] opcode,
+        output [4:0] instruction,
         output mode,
         output offset,
         output [2:0] reg_a,
@@ -21,6 +22,7 @@ module decoder (
     assign value = opcode[5:0]; 
     assign instruction_type = opcode[10:9];
     assign sub_instruction = opcode[8:6];
+    assign instruction = opcode[10:6];
 
 endmodule
 

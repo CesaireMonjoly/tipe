@@ -23,7 +23,8 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
     typedef enum logic [1:0] {
         FETCH  = 2'd0,
         DECODE = 2'd1, 
-        EXEC   = 2'd2
+        EXEC   = 2'd2,
+        STORE  = 2'd3
     } state_t;
     state_t state;
 
@@ -35,7 +36,25 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
 
     logic [11:0] core_jump_addr;
     
-    logic [11:0] core_registers [0:3]; //A B C D E F G H
+    logic [11:0] core_registers [0:7]; //A B C D E F G H
+
+    logic [11:0] core_A;
+    logic [11:0] core_B;
+    logic [11:0] core_C;
+    logic [11:0] core_D;
+    logic [11:0] core_E;
+    logic [11:0] core_F;
+    logic [11:0] core_G;
+    logic [11:0] core_H;
+
+    assign core_A = core_registers[0];
+    assign core_B = core_registers[1];
+    assign core_C = core_registers[2];
+    assign core_D = core_registers[3];
+    assign core_E = core_registers[4];
+    assign core_F = core_registers[5];
+    assign core_G = core_registers[6];
+    assign core_H = core_registers[7];
 
     logic core_equ_flag;
     logic core_sign_flag;
@@ -87,7 +106,7 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
     );
 
     //User Stacks==========
-    logic [11:0] stack_pointer;
+    logic [11:0] stack_pointer = 0;
 
     logic stack_we;
     logic [11:0] stack_in;
@@ -112,10 +131,10 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
     logic [11:0] alu_output;
     logic [2:0] alu_func_code;
     logic alu_carry_in;
-    wire alu_carry_out;
-    wire alu_equ_out;
-    wire alu_sign_out;
-    wire alu_overflow;
+    logic alu_carry_out;
+    logic alu_equ_out;
+    logic alu_sign_out;
+    logic alu_overflow;
 
     assign alu_func_code = dec_sub_instruction;
  
@@ -134,6 +153,7 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
 
     //Decoder==============
     logic [11:0] dec_opcode;
+    logic [4:0] dec_instruction;
     logic [3:0] dec_operation_type;
     logic [5:0] dec_value;
     logic [2:0] dec_reg_r;
@@ -149,6 +169,7 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
     decoder core_decoder (
         .clk(clk),
         .opcode(dec_opcode),
+        .instruction(dec_instruction),
         .mode(dec_mode),
         .offset(dec_offset),
         .value(dec_value),
@@ -209,7 +230,7 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
             core_reg_r <= 0;
             core_reg_w <= 0;
             core_jump_addr <= 0;
-            for(int i = 0; i < 4; i++) begin
+            for(int i = 0; i < 8; i++) begin
                 core_registers[i] <= 0;
             end
             core_equ_flag <= 0;
@@ -223,9 +244,9 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
         if (cpu_ce) begin
             case (state)
                 FETCH : begin
-                    core_instruction_counter <= core_instruction_counter + 1;
-                    led_0 <= ~led_0;
+                    //core_instruction_counter <= core_instruction_counter + 1;
                     mem_addr <= core_program_counter;
+                    led_0 <= ~led_0;
                     state <= DECODE;
                 end
                 DECODE : begin
@@ -240,14 +261,16 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
                     end else if (dec_mode == 1) begin //VALUE MODE
                         core_jump_addr <= stack_out;
                         core_reg_w <= stack_out;
-                        stack_in[11:6] <= dec_reg_w;
-                        stack_in[5:0] <= dec_reg_r;
+                        if (dec_instruction[0] == 1) begin
+                            stack_in[11:6] <= dec_value;
+                        end else begin
+                            stack_in[5:0] <= dec_value;
+                        end
                     end
                     state <= EXEC;
                 end
                 EXEC : begin
                     led_2 <= ~led_2;
-                    core_program_counter <= core_program_counter + 1;
                     case (dec_instruction_type) 
                         `ALU_INSTRUCTION : begin
                             core_registers[dec_reg_w] <= alu_output;
@@ -255,35 +278,43 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
                             core_sign_flag <= alu_sign_out;
                         end
                         `JUMP_INSTRUCTION : begin
-                            if (dec_opcode == `JUMP_IF_E && core_equ_flag == 1) begin
+                            $display("%d", core_program_counter);
+                            if (dec_instruction == `JUMP_IF_E && core_equ_flag == 1) begin
                                 core_program_counter <= core_jump_addr;
-                            end else if (dec_opcode == `JUMP_IF_NE && core_equ_flag == 0) begin
+                            end else if (dec_instruction == `JUMP_IF_NE && core_equ_flag == 0) begin
                                 core_program_counter <= core_jump_addr;
-                            end else if (dec_opcode == `JUMP_IF_POS && core_sign_flag == 1) begin
+                            end else if (dec_instruction == `JUMP_IF_POS && core_sign_flag == 1) begin
                                 core_program_counter <= core_jump_addr;
-                            end else if (dec_opcode == `JUMP_IF_NEG && core_sign_flag == 0) begin
+                            end else if (dec_instruction == `JUMP_IF_NEG && core_sign_flag == 0) begin
+                                core_program_counter <= core_jump_addr;
+                            end else if (dec_instruction == `JUMP) begin
                                 core_program_counter <= core_jump_addr;
                             end
                         end
                         `MEM_MAN_INSTRUCTION : begin
-                            if (dec_opcode == `MOV_R_R) begin
-                                core_reg_w <= core_reg_r;
-                            end else if (dec_opcode == `MOV_A_R) begin
+                            if (dec_instruction == `MOV_R_R) begin
+                                core_registers[dec_reg_w] <= core_reg_r;
+                            end else if (dec_instruction == `MOV_A_R) begin
                                 mem_write_enable <= 1;            
-                            end else if (dec_opcode == `MOV_R_A) begin
-                                core_reg_w <= mem_data_out;
-                            end else if (dec_opcode == `PUSH_LOW) begin
+                            end else if (dec_instruction == `MOV_R_A) begin
+                                core_registers[dec_reg_w] <= mem_data_out;
+                            end else if (dec_instruction == `PUSH_LOW) begin
                                 stack_we <= 1;
-                            end else if (dec_opcode == `PUSH_HIGH) begin
+                            end else if (dec_instruction == `PUSH_HIGH) begin
                                 stack_we <= 1;
-                                stack_pointer <= stack_pointer + 1;
-                            end else if (dec_opcode == `PUSH_LOW) begin
-                                stack_we <= 1;
-                            end else if (dec_opcode == `POP) begin
-                                core_reg_w <= stack_out;
+                                stack_pointer <= stack_pointer + 11'b1;
+                            end else if (dec_instruction == `POP) begin
+                                core_registers[dec_reg_w] <= stack_out;
+                                stack_pointer <= stack_pointer - 1;
                             end
                         end
                     endcase
+                    state <= STORE;
+                end
+                STORE : begin
+                    stack_we <= 0;
+                    core_program_counter <= core_program_counter + 1;
+                    mem_write_enable <= 0;
                     state <= FETCH;
                 end
                 default : begin
