@@ -16,7 +16,7 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
         output logic led_1,
         output logic led_2,
         output logic led_3,
-        output logic led_4
+        output logic led_4,
     );
 
     //State
@@ -33,6 +33,10 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
 
     logic [11:0] core_reg_w;
     logic [11:0] core_reg_r;
+
+
+    logic [5:0] core_low_reg_w = core_reg_w[5:0];
+    logic [11:6] core_high_reg_w = core_reg_w[11:6];
 
     logic [11:0] core_jump_addr;
     
@@ -55,6 +59,7 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
     assign core_F = core_registers[5];
     assign core_G = core_registers[6];
     assign core_H = core_registers[7];
+
 
     logic core_equ_flag;
     logic core_sign_flag;
@@ -106,15 +111,15 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
     );
 
     //User Stacks==========
-    logic [11:0] stack_pointer = 0;
+    logic [11:0] stack_pointer = -1;
 
     logic stack_we;
-    logic [11:0] stack_in;
-    logic [11:0] stack_out;
+    logic [5:0] stack_in;
+    logic [5:0] stack_out;
 
     memory #(
-        .COUNT(10),
-        .DATA_WIDTH(12),
+        .COUNT(64),
+        .DATA_WIDTH(6),
         .WRITE_PRG(0)
     ) stack ( //Bits de poids faibles
         .clk(clk),
@@ -159,7 +164,7 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
     logic [2:0] dec_reg_r;
     logic [2:0] dec_reg_w;
     logic [11:0] dec_addr;
-    logic [2:0] dec_instruction_type;
+    logic [1:0] dec_instruction_type;
     logic [2:0] dec_sub_instruction;
     logic dec_mode;
     logic dec_offset;
@@ -181,7 +186,6 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
     //=====================
     
     //Main Memory=========
-    logic [11:0] mem_addr;
     logic mem_write_enable;
     logic [11:0] mem_data_in;
     wire [11:0] mem_data_out;
@@ -192,7 +196,7 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
         .WRITE_PRG(1)
     ) main_memory (
         .clk(clk),
-        .addr(mem_addr),
+        .addr(core_program_counter),
         .write_enable(mem_write_enable),
         .data_in(mem_data_in),
         .data_out(mem_data_out)
@@ -206,13 +210,13 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
 
             //MEMORY
             mem_data_in <= 0;
-            mem_addr <= 0;
+            core_program_counter <= 0;
             mem_write_enable <= 0;
 
             //STACK
             stack_we <= 0;
             stack_in <= 0;
-            stack_pointer <= 0;
+            stack_pointer <= -1;
 
             //ALU
             alu_carry_in <= 0;
@@ -245,27 +249,22 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
             case (state)
                 FETCH : begin
                     //core_instruction_counter <= core_instruction_counter + 1;
-                    mem_addr <= core_program_counter;
                     led_0 <= ~led_0;
                     state <= DECODE;
+                    core_current_instruction <= mem_data_out;
                 end
                 DECODE : begin
-                    core_current_instruction <= mem_data_out;
                     led_1 <= ~led_1;
                     if (dec_mode == 0) begin //REG/ADDR MODE
                         core_reg_w <= core_registers[dec_reg_w];
                         core_reg_r <= core_registers[dec_reg_r];
                         core_jump_addr <= core_registers[dec_reg_w];
-                        stack_in <= core_registers[dec_reg_w];
-                        //mem_addr <= core_registers[dec_reg_w];
+                        stack_in <= core_registers[dec_reg_w]; 
+                        //core_program_counter <= core_registers[dec_reg_w];
                     end else if (dec_mode == 1) begin //VALUE MODE
                         core_jump_addr <= stack_out;
                         core_reg_w <= stack_out;
-                        if (dec_instruction[0] == 1) begin
-                            stack_in[11:6] <= dec_value;
-                        end else begin
-                            stack_in[5:0] <= dec_value;
-                        end
+                        stack_in[5:0] <= dec_value;
                     end
                     state <= EXEC;
                 end
@@ -278,20 +277,23 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
                             core_sign_flag <= alu_sign_out;
                         end
                         `JUMP_INSTRUCTION : begin
-                            $display("%d", core_program_counter);
+                            core_equ_flag <= 0;
+                            core_sign_flag <= 0;
                             if (dec_instruction == `JUMP_IF_E && core_equ_flag == 1) begin
-                                core_program_counter <= core_jump_addr;
+                                core_program_counter <= core_jump_addr - 1;
                             end else if (dec_instruction == `JUMP_IF_NE && core_equ_flag == 0) begin
-                                core_program_counter <= core_jump_addr;
+                                core_program_counter <= core_jump_addr - 1;
                             end else if (dec_instruction == `JUMP_IF_POS && core_sign_flag == 1) begin
-                                core_program_counter <= core_jump_addr;
+                                core_program_counter <= core_jump_addr - 1 ;
                             end else if (dec_instruction == `JUMP_IF_NEG && core_sign_flag == 0) begin
-                                core_program_counter <= core_jump_addr;
+                                core_program_counter <= core_jump_addr - 1;
                             end else if (dec_instruction == `JUMP) begin
-                                core_program_counter <= core_jump_addr;
+                                core_program_counter <= core_jump_addr - 1;
                             end
                         end
                         `MEM_MAN_INSTRUCTION : begin
+                            core_equ_flag <= 0;
+                            core_sign_flag <= 0;
                             if (dec_instruction == `MOV_R_R) begin
                                 core_registers[dec_reg_w] <= core_reg_r;
                             end else if (dec_instruction == `MOV_A_R) begin
@@ -300,12 +302,20 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
                                 core_registers[dec_reg_w] <= mem_data_out;
                             end else if (dec_instruction == `PUSH_LOW) begin
                                 stack_we <= 1;
+                                stack_pointer <= stack_pointer + 11'b1;
                             end else if (dec_instruction == `PUSH_HIGH) begin
                                 stack_we <= 1;
                                 stack_pointer <= stack_pointer + 11'b1;
-                            end else if (dec_instruction == `POP) begin
-                                core_registers[dec_reg_w] <= stack_out;
-                                stack_pointer <= stack_pointer - 1;
+                            end else if (dec_instruction == `POP_LOW) begin
+                                //stack_we <= 1;
+                                //stack_in <= 6'b111111;
+                                core_registers[dec_reg_w][5:0] <= stack_out;
+                                stack_pointer <= stack_pointer - 11'b1;
+                            end else if (dec_instruction == `POP_HIGH) begin
+                                //stack_we <= 1;
+                                //stack_in <= 6'b111111;
+                                core_registers[dec_reg_w][11:6] <= stack_out;
+                                stack_pointer <= stack_pointer - 11'b1;
                             end
                         end
                     endcase
@@ -313,9 +323,11 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
                 end
                 STORE : begin
                     stack_we <= 0;
-                    core_program_counter <= core_program_counter + 1;
+                    stack_in <= 0;
+                    core_reg_w <= 0;
                     mem_write_enable <= 0;
                     state <= FETCH;
+                    core_program_counter <= core_program_counter + 1;
                 end
                 default : begin
                     state <= FETCH;

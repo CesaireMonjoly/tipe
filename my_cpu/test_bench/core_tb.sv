@@ -25,7 +25,7 @@ module core_tb;
     end
 
     initial begin 
-        #40000;
+        #90000;
         $finish;
     end
 

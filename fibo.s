@@ -3,55 +3,62 @@
 xor H H;
 push_l _l_entry;
 push_h _h_entry;
-pop H;
+pop_h H;
+pop_l H;
 jump H;
 //Jump to entry
-xor H H; //unreachable code
 
 _entry:
     //Working registers
-    xor A A;
+    xor A A; 
     xor B B;
     xor D D;
     xor F F;
     push_l $1;
     push_h $0;
-    pop B;
-    mov_r_r F B; 
+    pop_h B;
+    pop_l B;
+    mov_r_r C B; 
+
+    //B = 1
+    //C = 1
 
     //Amount of iteration (10)
     xor E E;
-    push_l $10;
+    push_l $13;
     push_h $0;
-    pop E;
+    pop_h E;
+    pop_l E;
 
-    //Counter
-    xor C C; 
+    //E = 10 (= 0x0A)
 
     // End jump
     push_l _l_end;
     push_h _h_end;
-    pop H;
+    pop_h H;
+    pop_l H;
 
     // Loop jump
     push_l _l_incr;
     push_h _h_incr;
-    pop G;
+    pop_h G;
+    pop_l G;
     jump G;
 
 _incr:
     sub E C; 
-    jump_if_e H  
+    jump_if_pos H  
     
     // fibo stuff
     mov_r_r D B;
     add B A;
     mov_r_r A D;
+    push A;
 
     //incr counter
-    add C F;
+    //add C F;
 
     jump G;
 
 _end:
-    mov_r_r A D;
+    jump H;

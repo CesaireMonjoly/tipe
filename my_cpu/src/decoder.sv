@@ -12,7 +12,7 @@ module decoder (
         output [2:0] reg_a,
         output [2:0] reg_b,
         output [5:0] value,
-        output [2:0] instruction_type,
+        output [1:0] instruction_type,
         output [2:0] sub_instruction
     );
     assign mode = opcode[11];

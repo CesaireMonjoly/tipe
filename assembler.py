@@ -15,10 +15,13 @@ class Assembler:
             'xor': 4, 'and': 5, 'or': 6, 'not': 7,
             # MEM
             'mov_r_r': 8, 'mov_a_r': 9, 'mov_r_a': 10,
+
+            #POP
+            'pop_l' : 11, 'pop_h' : 12,
             # DIRECT PUSH
-            'push_l': 12, 'push_h': 13,
-            # PUSH/POP
-            'push': 14, 'pop': 15,
+            'push_l': 13, 'push_h': 14,
+            # REGISTER PUSH
+            'push': 14,
             # JUMP
             'jump_if_e': 16, 'jump_if_ne': 17, 
             'jump_if_pos': 18, 'jump_if_neg': 19,

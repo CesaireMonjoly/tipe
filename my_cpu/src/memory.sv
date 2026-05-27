@@ -3,7 +3,7 @@
 
 module memory #(parameter COUNT = 4096, parameter DATA_WIDTH = 12, parameter WRITE_PRG = 0) (
         input clk,
-        input logic [DATA_WIDTH-1:0] addr,
+        input logic [11:0] addr,
         input logic write_enable,
         input logic [DATA_WIDTH-1:0] data_in ,
         output logic [DATA_WIDTH-1:0] data_out 
@@ -16,19 +16,40 @@ module memory #(parameter COUNT = 4096, parameter DATA_WIDTH = 12, parameter WRI
     logic [DATA_WIDTH-1:0] ram_2;
     logic [DATA_WIDTH-1:0] ram_3;
     logic [DATA_WIDTH-1:0] ram_4;
+    logic [DATA_WIDTH-1:0] ram_5;
+    logic [DATA_WIDTH-1:0] ram_6;
+    logic [DATA_WIDTH-1:0] ram_7;
+    logic [DATA_WIDTH-1:0] ram_8;
+    logic [DATA_WIDTH-1:0] ram_9;
+    logic [DATA_WIDTH-1:0] ram_10;
+    logic [DATA_WIDTH-1:0] ram_11;
+    logic [DATA_WIDTH-1:0] ram_12;
+    logic [DATA_WIDTH-1:0] ram_13;
+    logic [DATA_WIDTH-1:0] ram_14;
+
 
     assign ram_0 = ram[0];
     assign ram_1 = ram[1];
     assign ram_2 = ram[2];
     assign ram_3 = ram[3];
     assign ram_4 = ram[4];
+    assign ram_5 = ram[5];
+    assign ram_6 = ram[6];
+    assign ram_7 = ram[7];
+    assign ram_8 = ram[8];
+    assign ram_9 = ram[9];
+    assign ram_10 = ram[10];
+    assign ram_11 = ram[11];
+    assign ram_12 = ram[12];
+    assign ram_13 = ram[13];
+    assign ram_14 = ram[14];
 
     initial begin 
         if (WRITE_PRG) begin 
             $readmemb("prog.txt", ram);
         end else begin
             for(int i = 0; i < COUNT; i++) begin
-                ram[i] <= 0;
+                ram[i] <= 11'b1111111111111;
             end 
         end
     end
