@@ -23,8 +23,8 @@ SIM_TARGETS=decoder alu core
 
 build : 
 		@mkdir build
-		@yosys -p "read_verilog -sv $(SRC); synth_ice40 -top core -json $(BUILD_TOP)"
-		@nextpnr-ice40	--freq 12 --hx1k --package tq144 --json $(BUILD_TOP) --pcf $(BUILD_PCF) --asc $(BUILD_ASC)
+		@yosys -p "read_verilog -sv $(SRC); synth_ice40 -top core -json $(BUILD_TOP)" 
+		@nextpnr-ice40	--freq 12 --hx1k --package tq144 --json $(BUILD_TOP) --pcf $(BUILD_PCF) --asc $(BUILD_ASC) --pcf-allow-unconstrained
 		@icepack	$(BUILD_ASC) $(BUILD_PRG)
 		@echo "Done."
 

@@ -49,7 +49,7 @@ module memory #(parameter COUNT = 4096, parameter DATA_WIDTH = 12, parameter WRI
             $readmemb("prog.txt", ram);
         end else begin
             for(int i = 0; i < COUNT; i++) begin
-                ram[i] <= 11'b1111111111111;
+                ram[i] <= 11'b111111111111;
             end 
         end
     end

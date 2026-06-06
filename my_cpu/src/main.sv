@@ -5,7 +5,7 @@
 `include "src/clock.sv"
 `include "src/uart.sv"
 
-module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
+module core #(parameter CPU_CE = 9000, parameter UART_CE = 2000) (
         input clk,
         input reset,
 
@@ -17,6 +17,17 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
         output logic led_2,
         output logic led_3,
         output logic led_4,
+
+        output logic r0,  
+        output logic r1, 
+        output logic r2, 
+        output logic r3, 
+        output logic r4, 
+        output logic r5, 
+        output logic r6, 
+        output logic r7, 
+
+        output logic clk_out
     );
 
     //State
@@ -27,6 +38,9 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
         STORE  = 2'd3
     } state_t;
     state_t state;
+
+    assign clk_out = clk;
+
 
     logic [11:0] core_program_counter;
     logic [11:0] core_current_instruction;
@@ -66,7 +80,17 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
 
     logic [11:0] core_instruction_counter; //Count how many instructions that have been executed (for debug purpose)
 
+
+    //assign led_0 = core_reg_w[0];
+    //assign led_1 = core_reg_w[1];
+    //assign led_2 = core_reg_w[2];
+    //assign led_3 = core_reg_w[3];
+    //assign led_4 = core_reg_w[4];
+    //
+    
     //Uart transmiter====
+
+
 
     logic uart_tx_ce;
     logic uart_tx_data_available;
@@ -141,7 +165,6 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
     logic alu_sign_out;
     logic alu_overflow;
 
-    assign alu_func_code = dec_sub_instruction;
  
     alu core_alu (
         .a_in(core_reg_w),
@@ -169,7 +192,6 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
     logic dec_mode;
     logic dec_offset;
 
-    assign dec_opcode = core_current_instruction;
 
     decoder core_decoder (
         .clk(clk),
@@ -203,32 +225,23 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
     );
     //====================
     
-    //RESET
+    assign dec_opcode = core_current_instruction;
+    assign alu_func_code = dec_sub_instruction;
+
     always_ff @ (posedge clk) begin
+        //Reset
         if (reset) begin
             state <= FETCH;
-
-            //MEMORY
             mem_data_in <= 0;
             core_program_counter <= 0;
             mem_write_enable <= 0;
 
-            //STACK
             stack_we <= 0;
             stack_in <= 0;
             stack_pointer <= -1;
 
-            //ALU
             alu_carry_in <= 0;
 
-            //LEDS
-            led_0 <= 0;
-            led_1 <= 0;
-            led_2 <= 0;
-            led_3 <= 0;
-            led_4 <= 0;
-
-            //CORE
             core_program_counter <= 0;
             core_current_instruction <= 0;
             core_reg_r <= 0;
@@ -241,20 +254,15 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
             core_sign_flag <= 0;
             core_instruction_counter <= 0;
         end
-    end
-        
-    //Datapath
-    always_ff @ (posedge clk) begin
+        //Datapath
         if (cpu_ce) begin
+            //led_4 <= state[0];
             case (state)
                 FETCH : begin
-                    //core_instruction_counter <= core_instruction_counter + 1;
-                    led_0 <= ~led_0;
                     state <= DECODE;
                     core_current_instruction <= mem_data_out;
                 end
                 DECODE : begin
-                    led_1 <= ~led_1;
                     if (dec_mode == 0) begin //REG/ADDR MODE
                         core_reg_w <= core_registers[dec_reg_w];
                         core_reg_r <= core_registers[dec_reg_r];
@@ -269,7 +277,7 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
                     state <= EXEC;
                 end
                 EXEC : begin
-                    led_2 <= ~led_2;
+                    //led_2 <= ~led_2;
                     case (dec_instruction_type) 
                         `ALU_INSTRUCTION : begin
                             core_registers[dec_reg_w] <= alu_output;
@@ -322,6 +330,18 @@ module core #(parameter CPU_CE = 2000, parameter UART_CE = 2000) (
                     state <= STORE;
                 end
                 STORE : begin
+                    //led_3 <= ~led_3;
+                    //
+                    
+                    r0 <= core_A[0];
+                    r1 <= core_A[1];
+                    r2 <= core_A[2];
+                    r3 <= core_A[3];
+                    r4 <= core_A[4];
+                    r5 <= core_A[5];
+                    r6 <= core_A[6];
+                    r7 <= core_A[7];
+
                     stack_we <= 0;
                     stack_in <= 0;
                     core_reg_w <= 0;
